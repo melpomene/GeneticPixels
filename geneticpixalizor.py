@@ -19,9 +19,9 @@ class Picture:
                     p2 = randint(0, 255)
                     self.image.putpixel((x,y),(p0,p1,p2))
         elif self.method == "square":
-            for x in range(0, size[0], 10):
+            for x in range(0, size[0], 30):
                 for y in range(0, size[1], 10):
-                    pos = (x, y, x+10, y+10)
+                    pos = (x, y, x+30, y+10)
                     p0 = randint(0, 255)
                     p1 = randint(0, 255)
                     p2 = randint(0, 255)
@@ -42,9 +42,10 @@ class Picture:
                     else:
                         self.image.putpixel((x,y), individual2.image.getpixel((x,y)))
         elif self.method == "square":
-            for x in range(0, size[0], 10):
+
+            for x in range(0, size[0], 30):
                 for y in range(0, size[1], 10):
-                    pos = (x, y, x+10, y+10)
+                    pos = (x, y, x+30, y+10)
                     
                     if randint(0,99) < mutation_risk * 100:
                         #print "Mutating"
@@ -95,11 +96,13 @@ def spawn_start_gen(nbr_individuals, original):
         generation.append(pic)
     return generation
 
-def save_gen_to_file(gen, verbose=True):
+def save_gen_to_file(gen, verbose=True, show=False):
     for individual in gen: 
         individual.save()
         if verbose:
             print " fitness: " + str(individual.fitness)
+        if show: 
+            individual.image.show()
 
 
 
@@ -134,29 +137,46 @@ def run(iterations_max, nbr_individuals, nbr_survivors, mutation_risk, original)
     gen = spawn_start_gen(nbr_individuals, original) # returns
     print "Done generating. Starting Darwinism"
     iteration = 0
+    best_individual = 0
+    stagnation = 0
     try:
         while iteration < iterations_max:
             mates =  generate_children(gen, nbr_survivors, mutation_risk)
             gen = mates
 
-            #print str(iteration) + " " + str(gen)
+            print str(iteration) + " " + str(gen)
+            if gen[0] == best_individual:
+                stagnation += 1
+            else: 
+                best_individual = gen[0]
+                stagnation = 0
+
+            if stagnation > 100: # If generation seems to have stagnated. Introduce new ind to pack
+                lone_wolf = Picture(gen[0].original)
+                lone_wolf.random()
+                gen.append(lone_wolf)
+                stagnation = 0
+
+
+
             iteration += 1
     except KeyboardInterrupt:
         pass
-    save_gen_to_file(gen[:10])
+    save_gen_to_file(gen[:10], True, True)
 
 
 if __name__ == "__main__":
-    iterations_max = 1000
-    nbr_individuals = 7
+    iterations_max = 5000
+    nbr_individuals = 5
     nbr_survivors = 1
-    mutation_risk = 0.3
+    mutation_risk = 0.12
     original = Image.open("test_small.jpg")
-    
-
+     
+    run(iterations_max, nbr_individuals, nbr_survivors, mutation_risk, original)
+    exit()
     while(True):
-        iterations_max = randint(1, 10000)
-        nbr_individuals = randint(2,1000)
+        iterations_max = randint(1, 1000)
+        nbr_individuals = randint(2,100)
         nbr_survivors= randint(0,nbr_individuals-1)
         mutation_risk = random()
         print "iterations: " + str(iterations_max) + " # individual: " + str(nbr_individuals) + " Survivors: " + str(nbr_survivors) + " Mutationrisk: " + str(mutation_risk)
